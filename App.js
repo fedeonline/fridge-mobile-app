@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import firebase from 'react-native-firebase';
 import AppNavigator from './src/routes';
+import { AlertProvider } from './src/components/Alert';
 
 firebase
   .messaging()
@@ -90,6 +91,10 @@ export default class App extends Component {
   };
 
   render() {
-    return <AppNavigator />;
+    return (
+      <AlertProvider>
+        <AppNavigator />
+      </AlertProvider>
+    );
   }
 }

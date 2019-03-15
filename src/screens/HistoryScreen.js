@@ -1,15 +1,22 @@
 /*
 History Screen
-Shows the last 50 recordered temperatures
+Shows the last 500 recordered temperatures
 */
 import React, { Component } from 'react';
 import { StyleSheet, View, FlatList } from 'react-native';
+import PropTypes from 'prop-types';
 import MainNavigator from './MainNavigator';
 import TemperatureItem from '../components/TemperatureItem';
+import { connectAlert } from '../components/Alert';
 
 const keyExtractor = item => item.id;
 
-export default class HistoryScreen extends Component {
+class HistoryScreen extends Component {
+  static propTypes = {
+    firestoreRef: PropTypes.object,
+    alertWithType: PropTypes.func,
+  };
+
   state = {
     refreshing: true,
     data: [],
@@ -26,12 +33,17 @@ export default class HistoryScreen extends Component {
     this.readData();
   };
 
-  readData = ({ props }) => {
+  filterData = myData => myData.filter(
+    (val, idx) => idx === 0 || val.data.celsius.toFixed(1) !== myData[idx - 1].data.celsius.toFixed(1),
+  );
+
+  readData = () => {
+    const { firestoreRef, alertWithType } = this.props;
     const myData = [];
-    props.firestoreRef
+    firestoreRef
       .collection('temperatures')
       .orderBy('createdAt', 'desc')
-      .limit(50)
+      .limit(500)
       .get()
       .then((snapshot) => {
         snapshot.forEach((doc) => {
@@ -40,13 +52,14 @@ export default class HistoryScreen extends Component {
             data: doc.data(),
           });
         });
+        const filteredData = this.filterData(myData);
         this.setState({
-          data: myData,
+          data: filteredData,
           refreshing: false,
         });
       })
       .catch((err) => {
-        console.log('Error getting documents', err);
+        alertWithType('error', 'Read failure!', err);
         this.setState({
           refreshing: false,
         });
@@ -78,3 +91,5 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
 });
+
+export default connectAlert(HistoryScreen);

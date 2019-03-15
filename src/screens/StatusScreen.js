@@ -8,10 +8,12 @@ import Moment from 'moment';
 import PropTypes from 'prop-types';
 import images from '../res/images';
 import MainNavigator from './MainNavigator';
+import { connectAlert } from '../components/Alert';
 
-export default class StatusScreen extends Component {
+class StatusScreen extends Component {
   static propTypes = {
     firestoreRef: PropTypes.object,
+    alertWithType: PropTypes.func,
   };
 
   state = {
@@ -47,11 +49,12 @@ export default class StatusScreen extends Component {
   };
 
   onConnectionError = (err) => {
-    console.log('Transaction failure:', err);
+    const { alertWithType } = this.props;
+    alertWithType('error', 'Write failure!', err);
   };
 
   readStatus = () => {
-    const { firestoreRef } = this.props;
+    const { firestoreRef, alertWithType } = this.props;
     firestoreRef
       .collection('fridge')
       .doc('status')
@@ -70,7 +73,7 @@ export default class StatusScreen extends Component {
         this.setState({ error: false, status });
       })
       .catch((err) => {
-        console.log('Transaction failure:', err);
+        alertWithType('error', 'Write failure!', err);
         this.setState({ error: true });
       });
   };
@@ -163,3 +166,5 @@ const styles = StyleSheet.create({
     textShadowRadius: 10,
   },
 });
+
+export default connectAlert(StatusScreen);

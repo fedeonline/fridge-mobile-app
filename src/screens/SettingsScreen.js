@@ -1,20 +1,23 @@
 /* eslint-disable react/no-unused-state */ import React, { Component } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { FormLabel, FormInput, Button } from 'react-native-elements';
 import PropTypes from 'prop-types';
 import MainNavigator from './MainNavigator';
+import { connectAlert } from '../components/Alert';
 
 const backgroundColor = '#694eeb';
 
-export default class SettingsScreen extends Component {
+class SettingsScreen extends Component {
   static propTypes = {
     firestoreRef: PropTypes.object,
+    alertWithType: PropTypes.func,
   };
 
   state = {
     maxTemp: '',
     minTemp: '',
     error: false,
+    loading: true,
   };
 
   componentDidMount() {
@@ -22,7 +25,7 @@ export default class SettingsScreen extends Component {
   }
 
   readSettings = () => {
-    const { firestoreRef } = this.props;
+    const { firestoreRef, alertWithType } = this.props;
     firestoreRef
       .collection('fridge')
       .doc('settings')
@@ -32,31 +35,36 @@ export default class SettingsScreen extends Component {
           const { maxTemp, minTemp } = doc.data();
           this.setState({
             error: false,
+            loading: false,
             maxTemp: maxTemp.toFixed(1).toString(),
             minTemp: minTemp.toFixed(1).toString(),
           });
         }
       })
       .catch((err) => {
-        console.log('Read settings failure:', err);
-        this.setState({ error: true });
+        alertWithType('error', 'Read failure!', err.message);
+        this.setState({ error: true, loading: false });
       });
   };
 
   writeSettings = () => {
-    const { firestoreRef } = this.props;
+    this.setState({ loading: true });
+    const { firestoreRef, alertWithType } = this.props;
     const { maxTemp, minTemp } = this.state;
-    firestoreRef
-      .collection('fridge')
-      .doc('settings')
-      .set({ maxTemp: parseFloat(maxTemp), minTemp: parseFloat(minTemp) })
-      .then(() => {
-        console.log('Write successful');
-      })
-      .catch((err) => {
-        console.log('Write failure:', err);
-        this.setState({ error: true });
-      });
+    if (parseFloat(maxTemp) > parseFloat(minTemp)) {
+      firestoreRef
+        .collection('fridge')
+        .doc('settings')
+        .set({ maxTemp: parseFloat(maxTemp), minTemp: parseFloat(minTemp) })
+        .then(() => {
+          alertWithType('success', 'Success', 'Settings updated.');
+          this.setState({ error: false, loading: false });
+        })
+        .catch((err) => {
+          alertWithType('error', 'Write failure!', err.message);
+          this.setState({ error: true, loading: false });
+        });
+    }
   };
 
   refreshStatus = () => {
@@ -64,7 +72,7 @@ export default class SettingsScreen extends Component {
   };
 
   render() {
-    const { maxTemp, minTemp } = this.state;
+    const { loading, maxTemp, minTemp } = this.state;
     return (
       <View style={styles.mainView}>
         <MainNavigator {...this.props} />
@@ -92,6 +100,7 @@ export default class SettingsScreen extends Component {
             title="SUBMIT"
           />
         </View>
+        <View style={styles.loading}>{loading && <ActivityIndicator size="large" />}</View>
       </View>
     );
   }
@@ -105,4 +114,15 @@ const styles = StyleSheet.create({
   buttonContainer: {
     marginTop: 20,
   },
+  loading: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
+
+export default connectAlert(SettingsScreen);

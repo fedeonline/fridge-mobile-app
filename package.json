@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.0.0",
+    "hoist-non-react-statics": "^3.3.0",
     "moment": "^2.22.2",
     "prop-types": "^15.7.2",
     "react": "16.6.3",
     "react-native": "0.58.6",
+    "react-native-dropdownalert": "^3.9.2",
     "react-native-elements": "^0.19.1",
     "react-native-firebase": "^5.2.3",
     "react-native-gesture-handler": "^1.1.0",
